@@ -1,0 +1,13 @@
+/.DS_Store
+/target
+.settings
+.cache
+/data
+/.classpath
+/.project
+/.groovy
+*.iml
+/.idea
+.metadata
+bin/
+compiledVSDefinitions/
