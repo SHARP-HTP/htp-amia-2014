@@ -12,17 +12,34 @@ import org.joda.time.DateTime;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.*;
 
 public class DataCollector {
 
     public static void main(String[] args) throws Exception {
+        File outDir = new File("out");
+        outDir.mkdirs();
+
         DataCollector test = new DataCollector();
 
-        test.testLocal();
+        List<String> emeasures = Arrays.asList("0060", "0043", "0062", "0036", "0070", "0033");
+
+        for(String emeasure : emeasures){
+            File file = new File(outDir, emeasure + ".dat");
+            file.createNewFile();
+            FileOutputStream out = new FileOutputStream(file);
+
+            for(RunResults result : test.testLocal(emeasure)){
+                IOUtils.write(result.patients + "," + result.time / 1000, out);
+            }
+
+            out.close();
+        }
     }
 
-    private List<RunResults> testLocal() throws Exception {
+    private List<RunResults> testLocal(String emeasure) throws Exception {
         ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("qdm-grid-master-context.xml");
         ctx.registerShutdownHook();
 
@@ -30,21 +47,15 @@ public class DataCollector {
 
         Set<GridWorker> workers = new HashSet<GridWorker>();
 
-        for(int i=0;i<3;i++){
+        for(int i=0;i<8;i++){
             workers.add(
                     GridWorker.launch("localhost", Integer.parseInt("515" + Integer.toString(i)), "localhost", 1984, true));
         }
 
         List<RunResults> results = new ArrayList<RunResults>();
-        for(int i=1;i<=20;i++){
-            results.add(this.doTestLocal(1000 * i, gridMaster));
+        for(int i=1;i<=10;i++){
+            results.add(this.doTestLocal(emeasure, 1000 * i, gridMaster));
         }
-
-        System.out.println("--------Local Data--------");
-        for(RunResults result : results){
-            System.out.println(result.patients + "," + result.time / 1000);
-        }
-        System.out.println("--------End Local Data--------");
 
         for(GridWorker worker : workers){
             worker.shutdown();
@@ -55,10 +66,10 @@ public class DataCollector {
         return results;
     }
 
-    private RunResults doTestLocal(int multiple, GridMaster gridMaster) throws Exception {
+    private RunResults doTestLocal(String emasure, int multiple, GridMaster gridMaster) throws Exception {
         PatientIterable patients = new PatientIterable(multiple);
 
-        String qdmXml = IOUtils.toString(new ClassPathResource("cypress/measures/ep/0033/hqmf1.xml").getInputStream());
+        String qdmXml = IOUtils.toString(new ClassPathResource("cypress/measures/ep/"+emasure+"/hqmf1.xml").getInputStream());
 
         final int[] total = {0};
 
