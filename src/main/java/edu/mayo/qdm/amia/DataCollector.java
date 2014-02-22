@@ -12,68 +12,70 @@ import org.joda.time.DateTime;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class DataCollector {
 
     public static void main(String[] args) throws Exception {
+        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("qdm-grid-master-context.xml");
+        ctx.registerShutdownHook();
+
+        Set<GridWorker> workers = new HashSet<GridWorker>();
+
+        for(int j=0;j<8;j++){
+            workers.add(
+                    GridWorker.launch("localhost", Integer.parseInt("515" + Integer.toString(j)), "localhost", 1984, true));
+        }
+
+        GridMaster gridMaster = ctx.getBean(GridMaster.class);
+
         File outDir = new File("out");
         outDir.mkdirs();
 
         DataCollector test = new DataCollector();
 
-        List<String> emeasures = Arrays.asList("0060", "0043", "0062", "0036", "0070", "0033");
+        List<String> emeasures = Arrays.asList("0043", "0060", "0062", "0036", "0070", "0033");
 
         for(String emeasure : emeasures){
             File file = new File(outDir, emeasure + ".dat");
             file.createNewFile();
-            FileOutputStream out = new FileOutputStream(file);
+            PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
 
-            for(RunResults result : test.testLocal(emeasure)){
-                IOUtils.write(result.patients + "," + result.time / 1000, out);
+            for(RunResults result : test.testLocal(emeasure, gridMaster)){
+                out.println(result.patients + "," + result.time / 1000);
             }
 
             out.close();
         }
-    }
-
-    private List<RunResults> testLocal(String emeasure) throws Exception {
-        ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("qdm-grid-master-context.xml");
-        ctx.registerShutdownHook();
-
-        GridMaster gridMaster = ctx.getBean(GridMaster.class);
-
-        Set<GridWorker> workers = new HashSet<GridWorker>();
-
-        for(int i=0;i<8;i++){
-            workers.add(
-                    GridWorker.launch("localhost", Integer.parseInt("515" + Integer.toString(i)), "localhost", 1984, true));
-        }
-
-        List<RunResults> results = new ArrayList<RunResults>();
-        for(int i=1;i<=10;i++){
-            results.add(this.doTestLocal(emeasure, 1000 * i, gridMaster));
-        }
 
         for(GridWorker worker : workers){
-            worker.shutdown();
+            worker.close();
         }
+    }
 
-        ctx.close();
+    private List<RunResults> testLocal(String emeasure, GridMaster gridMaster) throws Exception {
+        List<RunResults> results = new ArrayList<RunResults>();
+        for(int i=1;i<=10;i++){
+            long startTime = System.currentTimeMillis();
+            int patients = this.doTestLocal(emeasure, 1000 * i, gridMaster);
+
+            RunResults result = new RunResults(patients, (System.currentTimeMillis() - startTime));
+            results.add(result);
+        }
 
         return results;
     }
 
-    private RunResults doTestLocal(String emasure, int multiple, GridMaster gridMaster) throws Exception {
+    private int doTestLocal(String emasure, int multiple, GridMaster gridMaster) throws Exception {
         PatientIterable patients = new PatientIterable(multiple);
 
         String qdmXml = IOUtils.toString(new ClassPathResource("cypress/measures/ep/"+emasure+"/hqmf1.xml").getInputStream());
 
         final int[] total = {0};
-
-        long startTime = System.currentTimeMillis();
 
         gridMaster.execute(patients, qdmXml, MeasurementPeriod.getCalendarYear(new DateTime(2012, 6, 1, 1, 1).toDate()), null, new ResultCallback() {
             @Override
@@ -83,10 +85,9 @@ public class DataCollector {
         });
 
         System.out.println(total[0]);
-        System.out.println("Total Time: " + (System.currentTimeMillis() - startTime));
         System.out.println("Total Patients: " + patients.counter);
 
-        return new RunResults(patients.counter, (System.currentTimeMillis() - startTime), total[0]);
+        return patients.counter;
     }
 
     public static Iterator<Patient> multiply(final int size){
@@ -159,12 +160,10 @@ public class DataCollector {
     private static class RunResults {
         private int patients;
         private long time;
-        private int hits;
 
-        private RunResults(int patients, long time, int hits) {
+        private RunResults(int patients, long time) {
             this.patients = patients;
             this.time = time;
-            this.hits = hits;
         }
 
         @Override
@@ -172,7 +171,6 @@ public class DataCollector {
             return "RunResults{" +
                     "patients=" + patients +
                     ", time=" + time +
-                    ", hits=" + hits +
                     '}';
         }
     }
