@@ -1,0 +1,408 @@
+\documentclass{amia}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage{minted}
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{pgfplotstable}
+\usepackage{booktabs} 
+\usepackage{longtable}
+
+%\MakeRobust{\CALL}
+
+\begin{document}
+
+\title{High Throughput Phenotyping -- Architectural Review}
+
+\author{ 
+     Kevin Peterson
+}
+
+\institutes{
+    $^1$ Mayo Clinic, Rochester, MN;
+}
+
+\maketitle
+
+\section*{Abstract}
+
+\textit{Effectively executing phenotyping algorithms on large populations of patients requires a multifaceted engineering approach. First, the standards-based algorithm representation must be transformed into a machine executable artifact. Next, the computation engine must allow for horizontal as well as vertical scalability. Finally, the resultant analytic information must be collated such that a useful response can ultimately returned. The High Throughput Phenotyping (HTP) project utilizes the The Quality Data Model (QDM) format for algorithm specification, allowing for standardization and interoperability. The QDM model is then converted to a JBoss{\textsuperscript{\textregistered}} Drools representation, which can then be executed in a clustered environment. Deployment in a clustered environment allows for horizontal scalability.}
+
+\section*{Introduction}
+The Strategic Health IT Advanced Research Projects (SHARP) Program established a platform for analyzing normalized clinical patient data\cite{pathak2013normalization,rea2012building}. The SHARP project focuses on many facets of patient data analytics, such as data normalization (in terms of semantics as well as structure), as well as a standards based focus. For this work, we focus on an important aspect of this technological stack, the computation engine.
+
+\subsection*{Algorithm Repository}
+
+\section*{Related Work}
+
+\subsection*{I2B2}
+
+\subsection*{Eureka}
+
+\section*{Methods}
+
+\subsection*{Architecture}
+
+\subsection*{Architectural Principals}
+In order to better understand the intent and function of the system, we have identified several guiding concepts, or architectural principles\cite{garlan1993introduction}.\\
+
+\textbf{Principle 1: Standards Based}\\
+\textbf{Statement:} Communications, interfaces, and data exchanges should be based on industry standards and specifications wherever possible.\\
+\textbf{Rational:} Standards based design allows for effective componitization of the system, as component interfaces and data contracts can be linked to published specifications. This allows for low-coupling of functional modules, as well as improved separation of concerns. A standards based approach to design also allows for implementation and information \textit{hiding}\cite{sullivan2001structure}, which allows greater opportunities for substituting component implementations based on context and use-case.\\
+\textbf{Implications:}\\There are several areas where standards will be used. First, and standard \textit{algorithm input format} is needed. This will allow interoperability and a common, shared grammar for communicating phenotyping algorithm intent. Second, as structured vocabularies play a major role in the algorithm logic, a standard terminology service interfaces is required. Finally, standard protocols are needed to integrate these components and to interact with the system.
+
+\textbf{Principle 2: Testability}\\
+\textbf{Statement:} System results should be verifiable, repeatable, and comparable to standard, curated data sets.\\
+\textbf{Rational:} Phenotyping occurs in many domains, and although there are efforts to automate the process\cite{chung2008automated,kyzar2011towards}, in many instances it remains a manual, human-driven process. This presents a system testing problem, as it may be difficult to determine acceptable system outputs. It is important, therefore, that a subject matter expert curated test data set be available, and that the test infrastructure incorporate this such that testing is automated and repeatable.\\
+\textbf{Implications:} Testing infrastructure will need to accommodate the automation of these test data sets. This also will require reporting processes available to clearly demonstrate test results.
+
+\textbf{Principle 3: Adaptability}\\
+\textbf{Statement:} The system will allow for patient phenotyping an a wide range of contexts and environments.\\
+\textbf{Rational:} When accessing Electronic Health Record (EHR) data across institutional boundaries, significant interoperability challenges arise\cite{chute2011sharpn}. As such, it is important that the system not be coupled to a particular data set or execution environment.\\
+\textbf{Implications:} Input data types need to be as general as possible, allowing for \textit{late binding} of the source data format to the phenotyping data execution format. The main requirement of this style is that adjacent components agree upon data exchange interfaces. 
+
+\begin{figure}
+\includegraphics[width=\textwidth]{htp-drools-arch}
+\caption{Phenotyping Architecture} 
+\label{fig:overall_arch}
+\end{figure}
+
+\subsection*{Style}
+The architectual style of the HTP execution engine is largely \textit{pipe and filter} based. In this style, input data is transformed via several discrete components in a streaming fashion, creating an information flow through the system which ultimately leads to the desired output\cite{garlan1993introduction}. One of the main benefits of this style is the strong separation of concerns of the components. Components need not know implementation details of each other -- and furthermore, need not even be aware of any other component, save those immediately adjacent to them in the pipeline. This implementation is possible via our Architectural Principle 1 - \textit{Standards Based} design, as components will have explicit and standardized contracts.
+
+\subsection*{System Components}
+\subsubsection{QDM XML to JSON Transform}
+\subsubsection{JSON to JBoss Drools Compiler}
+\subsubsection{Drools Execution Engine}
+\subsubsection{ValueSet Processor}
+QDM Data Elements semantically defined their intended criteria by using \textit{Value Sets}, or enumerated sets of coded concepts from standard vocabularies. For instance,\\
+
+\textit{"Diagnosis, Active: Acute Pharyngitis" using "Acute Pharyngitis Grouping Value Set (2.16.840.1.113883.3.464.1003.102.12.1011)"}\\
+
+In this example, in order for a QDM Data Element to be satisfied, a patient record must contain a Diagnosis entry coded with a Concept contained in the Value Set identified by the HL7 OID \textit{2.16.840.1.113883.3.464.1003.102.12.1011}. These OIDs give the \textit{Value Set} global identity and enable interoperability accross systems\cite{steindel2010oids}.
+
+For the purposes of algorithm execution, a mechanism for resolving the enumerated Concepts of a \textit{Value Set} is needed. Practically, it is usually advantageous to defer explicit resolution in favor of a \textit{exists}-type functionality. For example:
+
+\begin{algorithm}
+\begin{algorithmic}[1]
+\Procedure{exists\_valueset}{oid, codedentry}
+  \State $C \gets \{c | c \in resolve(oid)\}$
+  \State \Return{ $coded\_entry \in C$ }
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\begin{algorithmic}[1]
+\Procedure{find\_matches}{oid, coded\_elements}
+  \State $C \gets \{c | c \in resolve(oid)\}$
+  \State \Return{ $C \cap coded\_elements$ }
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+
+\subsection*{Standards and Models}
+\subsection*{QDM/HQMF}
+The Quality Data Model (QDM)\cite{behilngquality}...
+\subsection*{QDM JSON}
+
+\subsection*{Map Reduce}
+
+\begin{figure}[H]
+\begin{verbatim}
+  map(String algorithm, List patients):
+    // key: phenotyping algorithm
+    // value: List of patients
+    for each patient in patients:
+        for each population in getPopulations(algorithm, patient):
+            emit(population, patient);
+
+  reduce(String population, Iterator patients):
+    // key: a population
+    // values: a list of patients
+    emit(postprocess(result))
+\end{verbatim}
+\caption{High Level Map Reduce Algorithm} 
+\label{fig:map_reduce}
+\end{figure}
+
+\subsection*{Clustering}
+
+We follow the Hadoop clustering registration model\cite{wang2009hadoop}. The main advantage of this approach is that the master node does not need a priori knowledge of the number or location of the worker nodes. Using this approach, the master node, will accept incoming registration requests from worker nodes. These worker registration requests will include network location of the sending worker, which the master node then stores.
+
+\subsection*{JBoss{\textsuperscript{\textregistered}} Drools}
+Within the Drools context decision points are made based in part on HL7 Preconditions. Each precondition of a QDM algorithm is assigned a unique integer identifier. The result of a precondition is saved in state by inserting a new fact into the working memory called a \textit{PreconditionResult}.  Figure~\ref{fig:drools_population} illustrates this concept. In this example, the \textit{Initial Patient Population} (IPP) result is dependent on the precondion ``54'' being true -- or more precisely, depends on the existence of a \textit{PreconditionResult} entry in working memory for a given \textit{Patient} and identifier.
+
+\begin{figure}[H]
+\begin{verbatim}
+ Initial Patient Population =
+
+    AND: "Diagnosis, Active: Hospital Measures - AMI 
+        (ordinality: 'Hospital Measures - Principal')" starts during "Occurrence A
+        of Encounter, Performed: Hospital Measures-Encounter Inpatient"
+    AND: "Patient Characteristic Birthdate: birth date" >= 18 year(s) starts before
+        start of "Occurrence A of Encounter, Performed: 
+        Hospital Measures-Encounter Inpatient"
+    AND: "Occurrence A of Encounter, Performed: Hospital Measures-Encounter
+        Inpatient (length of stay <= 120 day(s))"
+    AND: "Occurrence A of Encounter, Performed: Hospital Measures-Encounter
+        Inpatient (discharge datetime)" during "Measurement Period"
+\end{verbatim}
+\caption{*********} 
+\label{fig:*****s}
+\end{figure}
+
+
+\begin{minted}{xml}
+**************************************************************   
+Population Criteria Section: population 
+**************************************************************
+<observation classCode="OBS" moodCode="EVN" isCriterionInd="true">
+   <id root="64D92822-FB51-4A2B-840F-24DFCC91E4EB"/>
+   <code code="ASSERTION" codeSystem="2.16.840.1.113883.5.4"/>
+   <value xsi:type="CD" code="IPP" codeSystem="2.16.840.1.113883.5.1063"
+          codeSystemName="HL7 Observation Value"
+          displayName="Initial Patient Population"/>
+   <!--  top and/or --><sourceOf typeCode="PRCN">
+      <conjunctionCode code="AND"/>
+      <act classCode="ACT" moodCode="EVN" isCriterionInd="true">
+      <!-- Diagnosis, Active pattern -->
+         ...
+      </act>
+   </sourceOf>
+   <sourceOf typeCode="PRCN">
+      <conjunctionCode code="AND"/>
+      <act classCode="ACT" moodCode="EVN" isCriterionInd="true">
+      <!-- Patient Characteristic Birthdate pattern -->
+         ...
+      </act>
+   </sourceOf>
+   <sourceOf typeCode="PRCN">
+      <conjunctionCode code="AND"/>
+      <act classCode="ACT" moodCode="EVN" isCriterionInd="true">
+      <!-- Encounter, Performed pattern -->
+         ...
+      </act>
+   </sourceOf>
+   <sourceOf typeCode="PRCN">
+      <conjunctionCode code="AND"/>
+      <act classCode="ACT" moodCode="EVN" isCriterionInd="true">
+      <!-- Encounter, Performed pattern -->
+         ...
+      </act>
+   </sourceOf>
+</observation>
+</entry>
+\end{minted}    
+
+\begin{figure}[H]
+\begin{minted}{javascript}
+IPP": {
+    "conjunction?": true,
+    "type": "IPP",
+    "title": "Initial Patient Population",
+    "hqmf_id": "64D92822-FB51-4A2B-840F-24DFCC91E4EB",
+    "preconditions": [
+    {
+        "id": 54,
+        "preconditions": [
+        {
+            "id": 46,
+            "reference": "DiagnosisActiveHospitalMeasuresAmi_precondition_46"
+        },
+        {
+            "id": 48,
+            "reference": "PatientCharacteristicBirthdateBirthDate_precondition_48"
+        },
+        {
+            "id": 50,
+            "reference": "OccurrenceAHospitalMeasuresEncounterInpatient1_precondition_50"
+        },
+        {
+            "id": 52,
+            "reference": "OccurrenceAHospitalMeasuresEncounterInpatient1_precondition_52"
+        }
+        ],
+        "conjunction_code": "allTrue"
+    }
+    ]
+}
+\end{minted}
+\caption{QDM JSON Representation} 
+\label{fig:qdm_json}
+\end{figure}
+
+
+\begin{figure}[H]
+\begin{minted}{java}
+/* Rule */
+rule "IPP"
+    dialect "mvel"
+    no-loop
+    salience -1000
+when
+    $p : Patient( )
+    PreconditionResult( id == "54", patient == $p )
+then
+    insertLogical(new PreconditionResult("IPP", $p, true))
+end
+\end{minted}
+\caption{Nested Precondition Facts in Drools} 
+\label{fig:drools_population}
+\end{figure}
+
+
+\begin{figure}[H]
+\begin{minted}{java}
+/* Rule */
+rule "54"
+    dialect "mvel"
+    no-loop
+when
+    $p : Patient( )
+    $p46: PreconditionResult( id == "46", patient == $p )
+    $p48: PreconditionResult( id == "48", patient == $p )
+    $p50: PreconditionResult( id == "50", patient == $p )
+    $p52: PreconditionResult( id == "52", patient == $p )
+    ...
+then
+    insertLogical(new PreconditionResult("54", $p, $context))
+end
+\end{minted}
+\caption{Nested Precondition Facts in Drools} 
+\label{fig:drools_precondition_groupings}
+\end{figure}
+
+Many QDM algorithms rely heavily on boolean logic as part of the algorithm. This is represented as AND/OR groupings of preconditions. This is expressed in Drools by checking for the existence of \textit{PreconditionResult}s in working memory. Figure~\ref{fig:drools_precondition_groupings} illustrates this concept by specifying an \textbf{AND} grouping. By checking for the existence of these \textit{PreconditionResult}s in working memory, we can assert whether or not precondition ``54'' is satisfied. The Drools execution engine, using the Rete algorithm, assures the order of activation of these nested rules, firing them only when the necessary \textit{PreconditionResult}s are available in working memory\cite{forgy1982rete}.
+
+
+\begin{figure}[H]
+\begin{minted}{java}
+/* Rule */
+rule "MedicationAdministeredNotDoneHospitalMeasuresHold"
+    dialect "mvel"
+    no-loop
+when
+    $p : Patient ( )
+    $event : Medication(
+        negated == true,
+        medicationStatus == MedicationStatus.ADMINISTERED
+    ) from droolsUtil.findMatches(
+        "2.16.840.1.113883.3.666.5.1145", 
+        valueSetDefinitions.get("2.16.840.1.113883.3.666.5.1145"), 
+        $p.getMedications())
+then
+    insertLogical(
+        new PreconditionResult(
+            "MedicationAdministeredNotDoneHospitalMeasuresHold", $p))
+end
+\end{minted}
+\caption{A Negated Medication Administration in Drools} 
+\label{fig:drools_data_element}
+\end{figure}
+
+Ultimately, these preconditions and nested preconditions form a type of decision tree. At the nodes of these trees are the QDM Data Elements\cite{http://www.healthit.gov/sites/default/files/qdm_122012.pdf}, which is an actionable criteria involving a clinical event or measurement.
+
+\begin{quote}
+\textit{Patients with a documented Reason for No Aspirin at Discharge.}
+\end{quote}
+
+Figure~\ref{fig:drools_data_element} is a translation of this Data Element into Drools. In this representation, all \textit{Medication} facts will be examined for the appropriate critieria. In this example, all of the Patient's medications (\textit{\$p.getMedications()}) will be compared against the given ValueSet (\textit{2.16.840.1.113883.3.666.5.1145}), as well as for the appropriate status (\textit{MedicationStatus.ADMINISTERED}), and negation criteria (\textit{negated == true}).
+
+\subsection*{Verification}
+The \textit{Test Procedure for §170.314(c) Clinical Quality Measures} document\footnote{http://www.healthit.gov/sites/default/files/cypress\_test\_procedure\_11272013.pdf}...
+
+Project Cypress\footnote{http://projectcypress.org/} was used as the testing oracle for the verification process, providing a curated test data set along with expected outcomes.
+
+\begin{enumerate}
+  \item Transform Cypress JSON Data into Fact Model
+  \item Load/Transform QDM XML algorithm
+  \item Execute algorithm against data data set
+  \item Compare results with expected Cypress specification
+  \item Repeat Step \#2 until all all algorithms have been tested
+  \item Consolidate results and calculate a verification score
+\end{enumerate}
+
+
+\subsection*{Performance (Execution Time)}
+
+\subsection*{Performance (Verification)}
+Verification was performed using the Project Cypress\footnote{http://projectcypress.org/} verification framework.
+
+\section*{Results}
+
+\subsection*{Execution Time}
+
+\begin{figure}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    xlabel={Patients},ylabel={Elapsed Time (seconds)}, 
+    width=15cm, height=8cm,
+    xmin=0,
+    ymin=0,
+    grid=major,
+    xticklabel style={
+            /pgf/number format/fixed
+    },
+    scaled x ticks=false,
+    legend pos= north west]
+
+\addlegendimage{empty legend}
+\addlegendentry{\textbf{NQF ID}}
+\addplot[color=red,mark=square*] table[x index=0,y index=1,col sep=comma] {execution/0043.dat};
+\addlegendentry{0043}
+\addplot[color=black,mark=x] table[x index=0,y index=1,col sep=comma] {execution/0060.dat};
+\addlegendentry{0060}
+\addplot[color=green,mark=diamond*] table[x index=0,y index=1,col sep=comma] {execution/0062.dat};
+\addlegendentry{0062}
+\addplot[color=blue,mark=pentagon*] table[x index=0,y index=1,col sep=comma] {execution/0036.dat};
+\addlegendentry{0036}
+\addplot[color=olive,mark=triangle*] table[x index=0,y index=1,col sep=comma] {execution/0033.dat};
+\addlegendentry{0033}
+
+\end{axis}
+\end{tikzpicture}
+\caption{Phenotyping Execution Time} 
+\label{fig:execution_time}
+\end{figure}
+
+\pgfplotstableset{
+begin table=\begin{longtable},
+end table=\end{longtable},
+}
+
+\pgfplotstabletypeset[col sep=comma,
+header=true,    
+columns={NQF ID,Max Depth,Operators,Negations,Temporal Operators,Complexity Score},      % display specified columns
+columns/NQF ID/.style={column type=l,string type},
+columns/Max Depth/.style={column type=l,string type},
+columns/Operators/.style={column type=l,string type},
+columns/Negations/.style={column type=l,string type},
+columns/Temporal Operator/.style={column type=l,string type},
+columns/Complexity Score/.style={column type=l,string type},
+% requires booktabs to place horiz rules
+every head row/.style={before row=\caption{Some numbers}\\\toprule, after row=\midrule\endhead}, 
+every last row/.style={after row=\bottomrule}
+]{complexity.dat}
+    
+\subsection*{Verification}
+
+
+\section*{Discussion}
+\subsection*{Conclusion}
+\subsection*{Future Work}
+\subsection*{Summary and Limitations}
+
+
+...
+
+\clearpage
+
+% unstr is used to keep citation order
+\bibliographystyle{unsrt}
+\bibliography{htp-amia}  
+
+\end{document}

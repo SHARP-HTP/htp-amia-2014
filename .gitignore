@@ -10,4 +10,8 @@
 /.idea
 .metadata
 bin/
-compiledVSDefinitions/
+*.log
+*.synctex.gz
+*.aux
+*.pdf
+build/
