@@ -15,3 +15,7 @@ bin/
 *.aux
 *.pdf
 build/
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls

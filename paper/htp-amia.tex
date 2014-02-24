@@ -72,10 +72,16 @@ In order to better understand the intent and function of the system, we have ide
 The architectual style of the HTP execution engine is largely \textit{pipe and filter} based. In this style, input data is transformed via several discrete components in a streaming fashion, creating an information flow through the system which ultimately leads to the desired output\cite{garlan1993introduction}. One of the main benefits of this style is the strong separation of concerns of the components. Components need not know implementation details of each other -- and furthermore, need not even be aware of any other component, save those immediately adjacent to them in the pipeline. This implementation is possible via our Architectural Principle 1 - \textit{Standards Based} design, as components will have explicit and standardized contracts.
 
 \subsection*{System Components}
-\subsubsection{QDM XML to JSON Transform}
-\subsubsection{JSON to JBoss Drools Compiler}
-\subsubsection{Drools Execution Engine}
-\subsubsection{ValueSet Processor}
+\subsubsection*{QDM XML to JSON Transformation}
+The QDM XML to JSON transformation component parses the QDM XML representation and transforms it into easily parsable JSON. This functionality is exposed via a REST service wrapping the Project Cypress health-data-standards\footnote{https://github.com/projectcypress/health-data-standards} project.
+
+\subsubsection*{JSON to JBoss Drools Compiler}
+The QDM JSON representation is programatically transformed into executable JBoss Drools rules by a compiler. The result of this transformation is a single Drools Rules file that can be executed by the Drools Engine, or other JBoss Drools environment.
+
+\subsubsection*{Drools Execution Engine}
+Using the JBoss Drools engine, the generated Drools Rules can be executed given an input patient set. The result of this execution will be the patent set result mapped to the given populations (such as NUMER, DENOM, etc).
+
+\subsubsection*{ValueSet Processor}
 QDM Data Elements semantically defined their intended criteria by using \textit{Value Sets}, or enumerated sets of coded concepts from standard vocabularies. For instance,\\
 
 \textit{"Diagnosis, Active: Acute Pharyngitis" using "Acute Pharyngitis Grouping Value Set (2.16.840.1.113883.3.464.1003.102.12.1011)"}\\
@@ -132,13 +138,13 @@ The Quality Data Model (QDM)\cite{behilngquality}...
 
 We follow the Hadoop clustering registration model\cite{wang2009hadoop}. The main advantage of this approach is that the master node does not need a priori knowledge of the number or location of the worker nodes. Using this approach, the master node, will accept incoming registration requests from worker nodes. These worker registration requests will include network location of the sending worker, which the master node then stores.
 
-\subsection*{JBoss{\textsuperscript{\textregistered}} Drools}
-Within the Drools context decision points are made based in part on HL7 Preconditions. Each precondition of a QDM algorithm is assigned a unique integer identifier. The result of a precondition is saved in state by inserting a new fact into the working memory called a \textit{PreconditionResult}.  Figure~\ref{fig:drools_population} illustrates this concept. In this example, the \textit{Initial Patient Population} (IPP) result is dependent on the precondion ``54'' being true -- or more precisely, depends on the existence of a \textit{PreconditionResult} entry in working memory for a given \textit{Patient} and identifier.
+
+\subsection*{Usage Scenario - \textit{Aspirin Prescribed at Discharge - (0142)}}
+To examine the functional capabilities of the system, we propose a prototypical usage scenario involving the NQF 0142 \textit{Aspirin Prescribed at Discharge} algorithm. Figure \ref{fig:0142_IPP_text} shows the Initial Patient Population (IPP) definition of this algorithm in human-readable text format.
 
 \begin{figure}[H]
 \begin{verbatim}
  Initial Patient Population =
-
     AND: "Diagnosis, Active: Hospital Measures - AMI 
         (ordinality: 'Hospital Measures - Principal')" starts during "Occurrence A
         of Encounter, Performed: Hospital Measures-Encounter Inpatient"
@@ -150,11 +156,13 @@ Within the Drools context decision points are made based in part on HL7 Precondi
     AND: "Occurrence A of Encounter, Performed: Hospital Measures-Encounter
         Inpatient (discharge datetime)" during "Measurement Period"
 \end{verbatim}
-\caption{*********} 
-\label{fig:*****s}
+\caption{NQF 0142 Text Representation} 
+\label{fig:0142_IPP_text}
 \end{figure}
 
+The first goal is to transform the logic conveyed in this human-readable representation into a machine executable format. Figure \ref{fig:0142_IPP_XML} shows the XML representation of the same logic described in Figure \ref{fig:0142_IPP_text}. The XML representation is based on the HL7 V3 RIM\cite{..hl7 citation here}.
 
+\begin{figure}[H]
 \begin{minted}{xml}
 **************************************************************   
 Population Criteria Section: population 
@@ -196,9 +204,15 @@ Population Criteria Section: population
 </observation>
 </entry>
 \end{minted}    
+\caption{NQF 0142 XML Representation} 
+\label{fig:0142_IPP_XML}
+\end{figure}
+
+The first step in this process is to convert the XML representation in figure~\ref{fig:0142_IPP_XML} into a JSON representation, shown in figure~\ref{fig:0142_IPP_JSON}. The JSON representation has some notable advantages over the XML representation. First, the JSON representation makes a clear distinction between algorithm \textit{flow} and algorithm \textit{data elements}. Figure~\ref{fig:0142_IPP_JSON} exemplifies this notion for the IPP population definition. As shown the IPP population is comprised of \textit{precondition} objects, joined together by a boolean operator specified by the \textit{conjunction\_code} attribute. Notice that a \textit{precondition} can either contain nested \textit{preconditions} (id: 54), or reference a concrete \textit{data elements} for futher processing (id: 46/48/40/52).
+
 
 \begin{figure}[H]
-\begin{minted}{javascript}
+\begin{minted}{java}
 IPP": {
     "conjunction?": true,
     "type": "IPP",
@@ -230,9 +244,13 @@ IPP": {
     ]
 }
 \end{minted}
-\caption{QDM JSON Representation} 
-\label{fig:qdm_json}
+\caption{NQF 0142 JSON Representation} 
+\label{fig:0142_IPP_JSON}
 \end{figure}
+
+
+\subsection*{JBoss{\textsuperscript{\textregistered}} Drools}
+Within the Drools context decision points are made based in part on HL7 Preconditions. Each precondition of a QDM algorithm is assigned a unique integer identifier. The result of a precondition is saved in state by inserting a new fact into the working memory called a \textit{PreconditionResult}.  Figure~\ref{fig:drools_population} illustrates this concept. In this example, the \textit{Initial Patient Population} (IPP) result is dependent on the precondion ``54'' being true -- or more precisely, depends on the existence of a \textit{PreconditionResult} entry in working memory for a given \textit{Patient} and identifier.
 
 
 \begin{figure}[H]
