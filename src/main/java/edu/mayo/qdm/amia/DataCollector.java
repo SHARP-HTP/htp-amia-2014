@@ -46,7 +46,7 @@ public class DataCollector {
             PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
 
             for(RunResults result : test.testLocal(emeasure, gridMaster)){
-                out.println(Integer.toString(result.patients) + "," + Long.toString(result.time / 1000) + System.getProperty("line.separator"));
+                out.print(Integer.toString(result.patients) + "," + Long.toString(result.time / 1000) + System.getProperty("line.separator"));
                 out.flush();
             }
 

@@ -9,7 +9,7 @@
 % Times new roman
 \usepackage{times}
 % Format references
-\usepackage[super]{natbib}
+%\usepackage[super]{natbib}
 % Paper to US letter
 \usepackage[paper=letterpaper, margin=1in]{geometry}
 \usepackage{caption}
@@ -18,7 +18,7 @@
 \usepackage{float}
 
 % Bibliographic references appear as superscript indices
-\bibpunct{[}{]}{,}{a}{}{;}
+%\bibpunct{[}{]}{,}{a}{}{;}
 
 
 \date{}

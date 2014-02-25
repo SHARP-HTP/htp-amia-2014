@@ -1,1 +1,1 @@
-latexmk htp-amia.tex -output-directory=build -pdf -shell-escape
+latexmk htp-amia.tex -pdf -shell-escape
