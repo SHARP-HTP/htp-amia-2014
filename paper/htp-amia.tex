@@ -18,7 +18,7 @@
 }
 
 \institutes{
-    $^1$ Mayo Clinic, Rochester, MN;
+    $^1$ Mayo Clinic, Rochester, MN
 }
 
 \maketitle
@@ -28,25 +28,23 @@
 \textit{Effectively executing phenotyping algorithms on large populations of patients requires a multifaceted engineering approach. First, the standards-based algorithm representation must be transformed into a machine executable artifact. Next, the computation engine must allow for horizontal as well as vertical scalability. Finally, the resultant analytic information must be collated such that a useful response can ultimately returned. The High Throughput Phenotyping (HTP) project utilizes the The Quality Data Model (QDM) format for algorithm specification, allowing for standardization and interoperability. The QDM model is then converted to a JBoss{\textsuperscript{\textregistered}} Drools representation, which can then be executed in a clustered environment. Deployment in a clustered environment allows for horizontal scalability.}
 
 \section*{Introduction}
-The Strategic Health IT Advanced Research Projects (SHARP) Program established a platform for analyzing normalized clinical patient data\cite{pathak2013normalization,rea2012building}. The SHARP project focuses on many facets of patient data analytics, such as data normalization (in terms of semantics as well as structure), as well as a standards based focus. For this work, we focus on an important aspect of this technological stack, the computation engine.
-
-\subsection*{Algorithm Repository}
-//todo
-\section*{Related Work}
-\subsection*{I2B2}
-\subsection*{Eureka}
+The Strategic Health IT Advanced Research Projects (SHARP) Program established a platform for analyzing normalized clinical patient data\cite{pathak2013normalization,rea2012building}. The SHARP project focuses on many facets of patient data analytics, such as data normalization (in terms of semantics as well as structure), as well as a standards based focus. For this work, we focus on an important aspect of this technological stack, the computation engine. 
 
 \section*{Methods}
+We base our architectural evaluation on a concrete use-case, the execution of a National Quality Forum (NQF) algortithm, specifically, \textit{Aspirin Prescribed at Discharge - (NQF: 0142)}, which aims to identify Acute myocardial infarction (AMI) patients who are prescribed aspirin at hospital discharge. For our analysis, we make two assumptions, that the given algorithm is available in Quality Data Model (QDM) XML format, and that an arbitrary set of patient data is available.
+
+In order to evaluate a candidate architecture, we first present a series of architectural principals that outline the critical high-level functional and non-functional requirements of the system. These principals guide design decisions and technology choices, and must hold for the candidate architecture to be viable. Next, we examine the individual components of the system, along with either interconnections, along the an examination of general architectural style choices. To reinforce these ideas, the \textit{Aspirin Prescribed at Discharge} algorithm will be shown at various stages of transformation and ultimately computation. Finally, to test our viability hypothesis, we quantitatively measure system performance in terms of algorithm computation time, and execution ``correctness,'' or verification of the computation results.
 
 \subsection*{Architecture}
+//todo -- Describe high level architecture -- high level description of figure~\ref{htp-drools-arch} -- etc.
 
-\subsection*{Architectural Principals}
-In order to better understand the intent and function of the system, we have identified several guiding concepts, or architectural principles\cite{garlan1993introduction}.\\
+\textbf{Architectural Principals.}
+In order to better understand the intent and function of the system, we have identified several guiding concepts, or architectural principles\cite{garlan1993introduction}.
 
 \textbf{Principle 1: Standards Based}\\
 \textbf{Statement:} Communications, interfaces, and data exchanges should be based on industry standards and specifications wherever possible.\\
 \textbf{Rational:} Standards based design allows for effective componitization of the system, as component interfaces and data contracts can be linked to published specifications. This allows for low-coupling of functional modules, as well as improved separation of concerns. A standards based approach to design also allows for implementation and information \textit{hiding}\cite{sullivan2001structure}, which allows greater opportunities for substituting component implementations based on context and use-case.\\
-\textbf{Implications:}\\There are several areas where standards will be used. First, and standard \textit{algorithm input format} is needed. This will allow interoperability and a common, shared grammar for communicating phenotyping algorithm intent. Second, as structured vocabularies play a major role in the algorithm logic, a standard terminology service interfaces is required. Finally, standard protocols are needed to integrate these components and to interact with the system.
+\textbf{Implications:} There are several areas where standards will be used. First, and standard \textit{algorithm input format} is needed. This will allow interoperability and a common, shared grammar for communicating phenotyping algorithm intent. Second, as structured vocabularies play a major role in the algorithm logic, a standard terminology service interfaces is required. Finally, standard protocols are needed to integrate these components and to interact with the system.
 
 \textbf{Principle 2: Testability}\\
 \textbf{Statement:} System results should be verifiable, repeatable, and comparable to standard, curated data sets.\\
@@ -68,22 +66,22 @@ In order to better understand the intent and function of the system, we have ide
 The architectual style of the HTP execution engine is largely \textit{pipe and filter} based. In this style, input data is transformed via several discrete components in a streaming fashion, creating an information flow through the system which ultimately leads to the desired output\cite{garlan1993introduction}. One of the main benefits of this style is the strong separation of concerns of the components. Components need not know implementation details of each other -- and furthermore, need not even be aware of any other component, save those immediately adjacent to them in the pipeline. This implementation is possible via our Architectural Principle 1 - \textit{Standards Based} design, as components will have explicit and standardized contracts.
 
 \subsection*{System Components}
-\subsubsection*{QDM XML to JSON Transformer}
+\textbf{QDM XML to JSON Transformer.}
 The QDM XML to JSON transformation component parses the QDM XML representation and transforms it into easily parsable JSON. This functionality is exposed via a REST service wrapping the Project Cypress health-data-standards\footnote{https://github.com/projectcypress/health-data-standards} project. This component is a Ruby\footnote{https://www.ruby-lang.org/en/} based component, and represents the only non Java Virtual Machine (JVM) component of the architecture.
 
-\subsubsection*{JSON to JBoss Drools Compiler}
+\textbf{JSON to JBoss Drools Compiler}
 The QDM JSON representation is programatically transformed into executable JBoss Drools rules via a compilation process. The result of this transformation is a single Drools Rules file that can be executed by the Drools Engine, or other JBoss Drools environment. The compilation component is based on the Groovy\footnote{http://groovy.codehaus.org/} language, as Groovy provides templating and string interpolation functionality that is difficult to replicate in Java.
 
-\subsubsection*{Drools Execution Engine}
+\textbf{Drools Execution Engine}
 Using the JBoss Drools engine, the generated Drools Rules can be executed given an input patient set. The result of this execution will be the patent set result mapped to the given populations (such as NUMER, DENOM, etc). A thin interface facade was created over the JBoss Drools version 5.6.0.Final library, hiding the implementation details of the engine. There are, in fact, no Drools-related APIs exposed to the client -- so the Drools-based implementation is decoupled from the user-facing APIs. This was done to allow flexibility in implementation, especially looking forward to moving to a Drools 6.x based implementation.\\
 The interface \texttt{edu.mayo.qdm.executor.Executor} is the main entry-point for user interaction. It is through this interface that the engine can be started, and patient data processed. This interface accepts an \texttt{Iterable} collection of patients as input, allowing for user-specific implementations of patient \texttt{Iterators}. Because of this, users may hide implementation details behind the \texttt{Iterator} interface, allowing for a wide variety of data extraction techniques. For example, a patient \texttt{Iterator} may be implemented by a database result set, with custom cursors and pagination tailored to the specific database and environment. In fact, the \texttt{Iterator} need not be implemented based on persisted data at all -- but rather accept outputs from a streaming API or another analytics package.
 
-\subsubsection*{ValueSet Processor}
+\textbf{ValueSet Processor}
 QDM Data Elements semantically defined their intended criteria by using \textit{Value Sets}, or enumerated sets of coded concepts from standard vocabularies. For instance,\\
 
-\textit{"Diagnosis, Active: Acute Pharyngitis" using "Acute Pharyngitis Grouping Value Set (2.16.840.1.113883.3.464.1003.102.12.1011)"}\\
+\texttt{"Diagnosis, Active: Acute Pharyngitis" using "Acute Pharyngitis Grouping Value Set (2.16.840.1.113883.3.464.1003.102.12.1011)"}\\
 
-In this example, in order for a QDM Data Element to be satisfied, a patient record must contain a Diagnosis entry coded with a Concept contained in the Value Set identified by the HL7 OID \textit{2.16.840.1.113883.3.464.1003.102.12.1011}. These OIDs give the \textit{Value Set} global identity and enable interoperability accross systems\cite{steindel2010oids}.
+In this example, in order for a QDM Data Element to be satisfied, a patient record must contain a Diagnosis entry coded with a Concept contained in the Value Set identified by the HL7 OID \texttt{2.16.840.1.113883.3.464.1003.102.12.1011}. These OIDs give the \textit{Value Set} global identity and enable interoperability accross systems\cite{steindel2010oids}.
 
 For the purposes of algorithm execution, a mechanism for resolving the enumerated Concepts of a \textit{Value Set} is needed. Practically, it is usually advantageous to defer explicit resolution in favor of a \textit{exists}-type functionality. For example:
 
@@ -96,7 +94,7 @@ For the purposes of algorithm execution, a mechanism for resolving the enumerate
 \end{algorithmic}
 \end{algorithm}
 
-Furthermore, it is necessary to find the subset of coded entries that align semantically with a defined  \textit{Value Set}. Extending the above example, it may be necessary to identify all Diagnoses in a patient record that align with the \textit{2.16.840.1.113883.3.464.1003.102.12.1011} Value Set in order to do further processing or filtering, such as temporal relations. This function, described below, comprises the second point of functionality for the ValueSet Processor.
+Furthermore, it is necessary to find the subset of coded entries that align semantically with a defined  \textit{Value Set}. Extending the above example, it may be necessary to identify all Diagnoses in a patient record that align with the \texttt{2.16.840.1.113883.3.464.1003.102.12.1011} Value Set in order to do further processing or filtering, such as temporal relations. This function, described below, comprises the second point of functionality for the ValueSet Processor.
 
 \begin{algorithm}
 \begin{algorithmic}[1]
@@ -107,13 +105,14 @@ Furthermore, it is necessary to find the subset of coded entries that align sema
 \end{algorithmic}
 \end{algorithm}
 
-\subsection*{Standards and Models}
-\subsection*{QDM/HQMF}
+\subsection*{Standards, Models, and Processing Algorithms}
+\textbf{QDM/HQMF.}
 The Quality Data Model (QDM)\cite{behilngquality}...
-\subsection*{CTS2}
+
+\textbf{CTS2.}
 Common Terminology Services 2\cite{cts2} is on Object Management Group{\textsuperscript{\textregistered}} (OMG) terminology services specification. This standard defines a common data model and interface for interacting with a terminology service, including read/write access and various maintenance, content loading, and querying functionality. CTS2 is the recommended implementation of the \textit{ValueSet Processor}, and can be easily incorporated via the provided adapter.
 
-\subsection*{Map Reduce}
+\textbf{Map Reduce.}
 Map Reduce is computational abstraction designed to allow for easier parallelization and distribution of large data sets for processing\cite{dean2008mapreduce}. The computation is a two-step process, consisting of a \textit{map} function followed by a \textit{reduce} function. The \textit{map} function, given in input, divides this input into smaller sub-problems which then are consolidated by the \textit{reduce} function. Consider the example in figure~\ref{fig:map_reduce_example}, where the average height for a given age is calculated. The \textit{map} function iterates over the data collection, emitting for each record the age and height. This is then consolidated by the \textit{reduce} function, which given each key (or, each \textit{age}), computes the average height for that age.
 
 \begin{figure}[H]
@@ -151,11 +150,11 @@ We can apply this concept in the context of patients and populations. In the \te
 
 Figure~\ref{fig:map_reduce_htp} illustrates the general flow of information through the phenotyping algorithm. The \textit{getPopulations} function encompass the actual algorithm execution logic -- in our case, the \textit{Drools Execution Engine} component. The \textit{postprocess} function in the \textit{reduce} portion is left to be implemented by the client, as this will be use-case dependent. The code base does include a basic demographics analytics post processor, but it is expected that clients will extend it to meet their needs, or substitute their own processing entirely.
 
-\subsection*{Clustering}
+\textbf{Clustering.}
 We follow the Hadoop clustering registration model\cite{wang2009hadoop}. The main advantage of this approach is that the master node does not need a priori knowledge of the number or location of the worker nodes. Using this approach, the master node, will accept incoming registration requests from worker nodes. These worker registration requests will include network location of the sending worker, which the master node then stores.
 
-\subsection*{Usage Scenario - \textit{Aspirin Prescribed at Discharge - (0142)}}
-To examine the functional capabilities of the system, we propose a prototypical usage scenario involving the NQF 0142 \textit{Aspirin Prescribed at Discharge} algorithm. Figure \ref{fig:0142_IPP_text} shows the Initial Patient Population (IPP) definition of this algorithm in human-readable text format.
+\subsection*{Execution Scenario - \textit{Aspirin Prescribed at Discharge - (0142)}}
+To examine the functional capabilities of the system against a concrete use-case, we propose a prototypical usage scenario involving the NQF 0142 \textit{Aspirin Prescribed at Discharge} algorithm. Figure~\ref{fig:0142_IPP_text} shows the Initial Patient Population (IPP) definition of this algorithm in human-readable text format.
 
 \begin{figure}[H]
 \begin{verbatim}
@@ -175,7 +174,7 @@ To examine the functional capabilities of the system, we propose a prototypical 
 \label{fig:0142_IPP_text}
 \end{figure}
 
-The first goal is to transform the logic conveyed in this human-readable representation into a machine executable format. Figure \ref{fig:0142_IPP_XML} shows the XML representation of the same logic described in Figure \ref{fig:0142_IPP_text}. The XML representation is based on the HL7 V3 RIM\cite{..hl7 citation here}.
+The first step in the processing of this algorithm is to transform the logic conveyed in this human-readable representation into a machine executable format. Figure \ref{fig:0142_IPP_XML} shows the XML representation of the same logic described in Figure \ref{fig:0142_IPP_text}. The XML representation is based on the HL7 V3 RIM\cite{..hl7 citation here}.
 
 \begin{figure}[H]
 \begin{minted}{xml}
@@ -223,7 +222,8 @@ Population Criteria Section: population
 \label{fig:0142_IPP_XML}
 \end{figure}
 
-The first step in this process is to convert the XML representation in figure~\ref{fig:0142_IPP_XML} into a JSON representation, shown in figure~\ref{fig:0142_IPP_JSON}. The JSON representation has some notable advantages over the XML representation. First, the JSON representation makes a clear distinction between algorithm \textit{flow} and algorithm \textit{data elements}. Figure~\ref{fig:0142_IPP_JSON} exemplifies this notion for the IPP population definition. As shown the IPP population is comprised of \textit{precondition} objects, joined together by a boolean operator specified by the \textit{conjunction\_code} attribute. Notice that a \textit{precondition} can either contain nested \textit{preconditions} (id: 54), or reference a concrete \textit{data elements} for futher processing (id: 46/48/40/52).
+\textbf{QDM JSON.}
+Transformation begins by converting the XML representation in figure~\ref{fig:0142_IPP_XML} into a JSON representation, shown in figure~\ref{fig:0142_IPP_JSON}. The JSON representation has some notable advantages over the XML representation. First, the JSON representation makes a clear distinction between algorithm \textit{flow} and algorithm \textit{data elements}. Figure~\ref{fig:0142_IPP_JSON} exemplifies this notion for the IPP population definition. As shown the IPP population is comprised of \textit{precondition} objects, joined together by a boolean operator specified by the \textit{conjunction\_code} attribute. Notice that a \textit{precondition} can either contain nested \textit{preconditions} or \texttt{reference} a concrete \textit{data elements} for further processing. The JSON representation also assigns a unique identifier to each precondition (in the form of an \texttt{id} attribute. These identifiers take the form of incremental integers, and apply to all preconditions, whether they \texttt{reference} a concrete \textit{data element} or group other preconditions.
 
 
 \begin{figure}[H]
@@ -263,10 +263,8 @@ IPP": {
 \label{fig:0142_IPP_JSON}
 \end{figure}
 
-
-\subsection*{JBoss{\textsuperscript{\textregistered}} Drools}
-Within the Drools context decision points are made based in part on HL7 Preconditions. Each precondition of a QDM algorithm is assigned a unique integer identifier. The result of a precondition is saved in state by inserting a new fact into the working memory called a \textit{PreconditionResult}.  Figure~\ref{fig:drools_population} illustrates this concept. In this example, the \textit{Initial Patient Population} (IPP) result is dependent on the precondion ``54'' being true -- or more precisely, depends on the existence of a \textit{PreconditionResult} entry in working memory for a given \textit{Patient} and identifier.
-
+\textbf{JBoss{\textsuperscript{\textregistered}} Drools.}
+Within the Drools context decision points are made based in part on HL7 Preconditions. Each precondition of a QDM algorithm is assigned a unique integer identifier. The result of a precondition is saved in state by inserting a new fact into the working memory called a \textit{PreconditionResult}.  Figure~\ref{fig:drools_population} illustrates this concept. In this example, the \textit{Initial Patient Population} (IPP) result is dependent on the precondition ``54'' being true -- or more precisely, depends on the existence of a \textit{PreconditionResult} entry in working memory for a given \textit{Patient} and identifier. Notice that the precondition identifier of ``54'' is a direct reference to the JSON \texttt{id} attribute described in the above section.
 
 \begin{figure}[H]
 \begin{minted}{java}
@@ -336,15 +334,20 @@ end
 \label{fig:drools_data_element}
 \end{figure}
 
-Ultimately, these preconditions and nested preconditions form a type of decision tree. At the nodes of these trees are the QDM Data Elements\cite{http://www.healthit.gov/sites/default/files/qdm_122012.pdf}, which is an actionable criteria involving a clinical event or measurement.
+Ultimately, these preconditions and nested preconditions form a type of decision tree. At the nodes of these trees are the QDM Data Elements\cite{http://www.healthit.gov/sites/default/files/qdm_122012.pdf}, which is an actionable criteria involving a clinical event or measurement. For example, NQF 0141 specifies a QDM Data Elements of \textit{Patients with a documented Reason for No Aspirin at Discharge.}. Figure~\ref{fig:drools_data_element} is a translation of this Data Element into Drools. In this representation, all \texttt{Medication} facts will be examined for the appropriate critieria. In this example, all of the Patient's medications (\texttt{\$p.getMedications()}) will be compared against the given ValueSet (\texttt{2.16.840.1.113883.3.666.5.1145}), as well as for the appropriate status (\texttt{MedicationStatus.ADMINISTERED}), and negation criteria (\texttt{negated == true}).
 
-\begin{quote}
-\textit{Patients with a documented Reason for No Aspirin at Discharge.}
-\end{quote}
 
-Figure~\ref{fig:drools_data_element} is a translation of this Data Element into Drools. In this representation, all \textit{Medication} facts will be examined for the appropriate critieria. In this example, all of the Patient's medications (\textit{\$p.getMedications()}) will be compared against the given ValueSet (\textit{2.16.840.1.113883.3.666.5.1145}), as well as for the appropriate status (\textit{MedicationStatus.ADMINISTERED}), and negation criteria (\textit{negated == true}).
+\textbf{Performance (Execution Time).}
+Scalability and performance are important aspects of the HTP architecture, and the ability to efficiently process large patient sets is critical. We hypothesize that because of the Drools-based implementation and the efficiencies of the RETE algorithm, the elapsed time required to analyze a patient set will increase linearly compared the number of total patients. Examining this hypothesis requires several preconditions - first, a large de-identified patient set ($> 300,000$ patients with attendant health record data). Next, a mechanism to verify the execution results of the former is required to ensure a valid test environment. Finally, computational complexity is variable across phenotyping algorithms, with examples ranging from simple logical comparisons, to large nested decision trees with temporal relationships between events. We must account for this variability by measuring complexity of the algorithms under study.
 
-\subsection*{Verification}
+The previously mentioned Project Cypress test data set was re purposed for execution time performance testing. In order to simulate $> 300,000$ patients, the Project Cypress's 36 patients were ``cloned'' and re-created to form a larger cohort. Execution time was then measured for 10 different patient set sizes, each set size equaling the Project Cypress test patient set size multiplied by an increasing multiple of 1000. Specifically, given the Project Cypress test patient set $P$, we can define each test patient multiset $T_j$ as $T_j = P \otimes (1000j)$ where $1 >= j >=10$.
+
+The complexity of the phenotyping algorithms under study is an important criteria to quantify, especially when comparing execution times. Several efforts provide guidance in this area\cite{li2012modeling,ross2010analysis}, from which we derive our complexity attributes: \textit{MaxDepth,  Boolean Operators, Negations,} and \textit{Temporal Operators}. \textit{MaxDepth} measures the maximum amount of nesting in the algorithm boolean clauses. If thought of as a boolean decision tree, this measurement would equal the longest path length to the root node. \textit{Boolean Operators} is a count of every \textit{AND}/\textit{OR} operator in the algorithm, while \textit{Negations} measures how many of these operators include a negation. Finally, \textit{Temporal Operators} counts the number of temporal logic calculations specified in the algorithm -- either as relative temporal comparisons between events (e.g. \texttt{"Medication, Order: Antibiotic Medications" <= 3 day(s) starts after start of "Occurrence B of Encounter, Performed: Ambulatory/ED Visit"}), or comparisons to the start and/or end time of the measurement period.
+
+\textbf{Performance (Verification).}
+//todo here...
+Verification was performed using the Project Cypress\footnote{http://projectcypress.org/} verification framework.
+
 The \textit{Test Procedure for §170.314(c) Clinical Quality Measures} document\footnote{http://www.healthit.gov/sites/default/files/cypress\_test\_procedure\_11272013.pdf}...
 
 Project Cypress\footnote{http://projectcypress.org/} was used as the testing oracle for the verification process, providing a curated test data set along with expected outcomes.
@@ -359,18 +362,14 @@ Project Cypress\footnote{http://projectcypress.org/} was used as the testing ora
 \end{enumerate}
 
 
-\subsection*{Performance (Execution Time)}
-Scalability and performance are important aspects of the HTP architecture, and the ability to efficiently process large patient sets is critical. We hypothesize that because of the Drools-based implementation and the efficiencies of the RETE algorithm, the elapsed time required to analyze a patient set will increase linearly compared the number of total patients. Examining this hypothesis requires several preconditions - first, a large de-identified patient set ($> 300,000$ patients with attendant health record data). Next, a mechanism to verify the execution results of the former is required to ensure a valid test environment. Finally, a mechanism to record timing results of each run is necessary.\\
-
-
-\subsection*{Performance (Verification)}
-Verification was performed using the Project Cypress\footnote{http://projectcypress.org/} verification framework.
-
 \section*{Results}
 
-\subsection*{Execution Time}
+\textbf{Execution Time.}
+Complexity measurements for a selection of algorithms are shown in figure~\ref{fig:qdm_complexity}. As shown, there is a wide range of complexity in the measured algorithms. To test the computation time of the execution engine under a variety of complexity scenarios, 5 algorithms representing different complexities were chosen. The algorithms, NQIF IDs 0036, 0033, 0043, 0060, and 0062, represent relative complexities ranging from high (0033, with 110 boolean operators and 112 temporal operators) to low (0043, with 8 boolean operators and 10 temporal operators), with the other three selected at random.
 
-\begin{figure}
+Execution times, shown in figure~\ref{fig:execution_time}, show the total elapsed time over the test patient sets.
+
+\begin{figure}[!htbp]
 \centering
 \begin{tikzpicture}
 \begin{axis}[
@@ -409,29 +408,35 @@ begin table=\begin{longtable},
 end table=\end{longtable},
 }
 
+\begin{figure}
 \pgfplotstabletypeset[col sep=comma,
 header=true,    
-columns={NQF ID,Max Depth,Operators,Negations,Temporal Operators,Complexity Score},      % display specified columns
+columns={NQF ID,Max Depth,Operators,Negations,Temporal Operators},      % display specified columns
 columns/NQF ID/.style={column type=l,string type},
 columns/Max Depth/.style={column type=l,string type},
-columns/Operators/.style={column type=l,string type},
+columns/Boolean Operators/.style={column type=l,string type},
 columns/Negations/.style={column type=l,string type},
-columns/Temporal Operator/.style={column type=l,string type},
-columns/Complexity Score/.style={column type=l,string type},
+columns/Temporal Operators/.style={column type=l,string type},
 % requires booktabs to place horiz rules
 every head row/.style={before row=\caption{Some numbers}\\\toprule, after row=\midrule\endhead}, 
 every last row/.style={after row=\bottomrule}
 ]{complexity.dat}
-    
-\subsection*{Verification}
+\caption{QDM Complexity Comparison} 
+\label{fig:qdm_complexity}
+\end{figure}
 
+\textbf{Verification}
+\\todo -- add some sort of table to show cypress results...
 
 \section*{Discussion}
-\subsection*{Conclusion}
-\subsection*{Future Work}
-\subsection*{Summary and Limitations}
+\textbf{Conclusion}
+//todo
 
-...
+\textbf{Future Work}
+//todo
+
+\textbf{Summary and Limitations}
+As with many compliation algorithms, the compilation of the QDM XML into JBoss Drools has several significant opportunities for improvement. First, Drools Fusion and Complex Event Processing\cite{bali2013drools} were not for the temporal relationships. Utilizing these modules would cause a significant increase in rule readability and conciseness. Next, the generated rules are prone to combinatorial explosions of rule activations -- especially in algorithms that heavily utilize OR clauses. The \texttt{exists} Drools operator would usually alleviate this, but a unique aspect of the QDM algorithms called \textit{Specific Occurrences} makes this difficult. A \textit{Specific Occurrence} is the notion of assigning an identifier to a specific event (such as a Diagnosis or Encounter), and referring to that specific event elsewhere in the algorithm. We follow the algorithm proposed by the MITRE Corporation\cite{specific_occurences}, which is effective but awkward and inefficient to implement in Drools. In general, logic to account for \textit{Specific Occurrences} has the greatest opportunity for improvement and optimization.
 
 
 \clearpage
