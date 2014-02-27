@@ -41,20 +41,20 @@ In order to evaluate a candidate architecture, we first present a series of arch
 \textbf{Architectural Principals.}
 In order to better understand the intent and function of the system, we have identified several guiding concepts, or architectural principles\cite{garlan1993introduction}.
 
-\textbf{Principle 1: Standards Based}\\
-\textbf{Statement:} Communications, interfaces, and data exchanges should be based on industry standards and specifications wherever possible.\\
-\textbf{Rational:} Standards based design allows for effective componitization of the system, as component interfaces and data contracts can be linked to published specifications. This allows for low-coupling of functional modules, as well as improved separation of concerns. A standards based approach to design also allows for implementation and information \textit{hiding}\cite{sullivan2001structure}, which allows greater opportunities for substituting component implementations based on context and use-case.\\
-\textbf{Implications:} There are several areas where standards will be used. First, and standard \textit{algorithm input format} is needed. This will allow interoperability and a common, shared grammar for communicating phenotyping algorithm intent. Second, as structured vocabularies play a major role in the algorithm logic, a standard terminology service interfaces is required. Finally, standard protocols are needed to integrate these components and to interact with the system.
+\textit{Principle 1: Standards Based}\\
+\textit{Statement:} Communications, interfaces, and data exchanges should be based on industry standards and specifications wherever possible.\\
+\textit{Rational:} Standards based design allows for effective componitization of the system, as component interfaces and data contracts can be linked to published specifications. This allows for low-coupling of functional modules, as well as improved separation of concerns. A standards based approach to design also allows for implementation and information \textit{hiding}\cite{sullivan2001structure}, which allows greater opportunities for substituting component implementations based on context and use-case.\\
+\textit{Implications:} There are several areas where standards will be used. First, and standard \textit{algorithm input format} is needed. This will allow interoperability and a common, shared grammar for communicating phenotyping algorithm intent. Second, as structured vocabularies play a major role in the algorithm logic, a standard terminology service interfaces is required. Finally, standard protocols are needed to integrate these components and to interact with the system.
 
-\textbf{Principle 2: Testability}\\
-\textbf{Statement:} System results should be verifiable, repeatable, and comparable to standard, curated data sets.\\
-\textbf{Rational:} Phenotyping occurs in many domains, and although there are efforts to automate the process\cite{chung2008automated,kyzar2011towards}, in many instances it remains a manual, human-driven process\cite{tao2013phenotyping}. This presents a system testing problem, as it may be difficult to determine acceptable system outputs. It is important, therefore, that a subject matter expert curated test data set be available, and that the test infrastructure incorporate this such that testing is automated and repeatable.\\
-\textbf{Implications:} Testing infrastructure will need to accommodate the automation of these test data sets. This also will require reporting processes available to clearly demonstrate test results.
+\textit{Principle 2: Testability}\\
+\textit{Statement:} System results should be verifiable, repeatable, and comparable to standard, curated data sets.\\
+\textit{Rational:} Phenotyping occurs in many domains, and although there are efforts to automate the process\cite{chung2008automated,kyzar2011towards}, in many instances it remains a manual, human-driven process\cite{tao2013phenotyping}. This presents a system testing problem, as it may be difficult to determine acceptable system outputs. It is important, therefore, that a subject matter expert curated test data set be available, and that the test infrastructure incorporate this such that testing is automated and repeatable.\\
+\textit{Implications:} Testing infrastructure will need to accommodate the automation of these test data sets. This also will require reporting processes available to clearly demonstrate test results.
 
-\textbf{Principle 3: Adaptability}\\
-\textbf{Statement:} The system will allow for patient phenotyping an a wide range of contexts and environments.\\
-\textbf{Rational:} When accessing Electronic Health Record (EHR) data across institutional boundaries, significant interoperability challenges arise\cite{chute2011sharpn}. As such, it is important that the system not be coupled to a particular data set or execution environment.\\
-\textbf{Implications:} Input data types need to be as general as possible, allowing for \textit{late binding} of the source data format to the phenotyping data execution format. The main requirement of this style is that adjacent components agree upon data exchange interfaces. 
+\textit{Principle 3: Adaptability}\\
+\textit{Statement:} The system will allow for patient phenotyping an a wide range of contexts and environments.\\
+\textit{Rational:} When accessing Electronic Health Record (EHR) data across institutional boundaries, significant interoperability challenges arise\cite{chute2011sharpn}. As such, it is important that the system not be coupled to a particular data set or execution environment.\\
+\textit{Implications:} Input data types need to be as general as possible, allowing for \textit{late binding} of the source data format to the phenotyping data execution format. The main requirement of this style is that adjacent components agree upon data exchange interfaces. 
 
 \begin{figure}
 \includegraphics[width=\textwidth]{htp-drools-arch}
@@ -418,10 +418,10 @@ columns/Boolean Operators/.style={column type=l,string type},
 columns/Negations/.style={column type=l,string type},
 columns/Temporal Operators/.style={column type=l,string type},
 % requires booktabs to place horiz rules
-every head row/.style={before row=\caption{Some numbers}\\\toprule, after row=\midrule\endhead}, 
+every head row/.style={before row=\caption{QDM Algorithm Complexity Metrics}\\\toprule, after row=\midrule\endhead}, 
 every last row/.style={after row=\bottomrule}
 ]{complexity.dat}
-\caption{QDM Complexity Comparison} 
+\caption{QDM Algorithm Complexity Metrics} 
 \label{fig:qdm_complexity}
 \end{figure}
 
